@@ -7,8 +7,8 @@ var Tail = require("tail").Tail;
 var wpaTail = new Tail("config/wpa_log");
 wpaTail.unwatch();
 
-var gpio = require("wiring-pi");
-var neopixels = require('rpi-ws281x-native');
+// var gpio = require("wiring-pi");
+// var neopixels = require('rpi-ws281x-native');
 
 var child_process = require("child_process");
 var exec = child_process.exec;
@@ -21,9 +21,9 @@ var settings = JSON.parse( fs.readFileSync("settings.json", "utf8") );
 
 /*  Setup GPIO channels
  */
-gpio.setup('gpio');
-gpio.pinMode(settings.setup_button_pin, gpio.INPUT);
-gpio.pullUpDnControl(settings.setup_button_pin, gpio.PUD_UP);
+// gpio.setup('gpio');
+// gpio.pinMode(settings.setup_button_pin, gpio.INPUT);
+// gpio.pullUpDnControl(settings.setup_button_pin, gpio.PUD_UP);
 
 /*
  *  Scales a hex color (assumed @ max brightness) to another max brightness.
@@ -213,8 +213,24 @@ server = http.createServer( function(req, res) {
   var attemptConnection = false
   switch (req.url) {
 
+    case "/jquery":
+      fs.readFile('jquery-3.2.1.min.js',function(err,data) {
+        res.writeHead(200, {'Content-Type': 'text/javascript'});
+        res.write(data);
+        res.end();
+      });
+      break;
+    
+    case "/portal":
+        fs.readFile('user-portal.html', function(err, data) {
+          res.writeHead(200, {'Content-Type': 'text/html'});
+          res.write(data);
+          res.end();
+    });
+        break;
     case "/scan":
       console.log("WiFi Scan requested...");
+      res.writeHead(200, {'Content-Type': 'text/json'});
       res.end( JSON.stringify( getScanResults() ) );
       break;
 
@@ -224,6 +240,7 @@ server = http.createServer( function(req, res) {
         payload += data;
       });
       req.on('end', function() {
+        console.log(payload);
         applyWiFiConfiguration( payload );
         console.log("[SoftAP]:\tWiFi Configuration: "+payload);
         console.log("[SoftAP]:\tTerminating SETUP");
@@ -267,7 +284,7 @@ eventEmitter.on('setup_1', function() {
 // (2) Start SoftAP Server
 eventEmitter.on('setup_2', function() {
   server.listen(settings.server.port, "192.168.42.1");
-  eventEmitter.emit("neo", "breathe", rgb2Int(0, 0, 255));
+  // eventEmitter.emit("neo", "breathe", rgb2Int(0, 0, 255));
   console.log('[SoftAP]:\tServer listening at http://192.168.42.1:'+settings.server.port+'.');
   // Note: The server will call setup_3 when the user has completed configuration.
 });
@@ -314,7 +331,10 @@ eventEmitter.on('connect_2', function() {
 });
 
 wpaTail.on('line', function(line) {
-  if (!watchingWPA) return;
+  if (!watchingWPA) {
+    console.log("Not watching wpa");
+    return;
+  }
   if (line.indexOf("wlan0: CTRL-EVENT-CONNECTED") > -1) {
     // The WiFi information was valid and we are associated!
     console.log("[SoftAP]:\tSuccessfully associated with WiFi AP.");
@@ -375,12 +395,12 @@ eventEmitter.on('failure_ssid_not_found', function() {
 /*
  *  SETUP button interrupt.
  */
-gpio.wiringPiISR(settings.setup_button_pin, gpio.INT_EDGE_RISING, function() {
-  console.log('[SoftAP]:\tSETUP button pressed.');
-  eventEmitter.emit("neo", "off");
-  killCurrentProcess();
-  waitForCurrentProcess('pre-setup');
-});
+// gpio.wiringPiISR(settings.setup_button_pin, gpio.INT_EDGE_RISING, function() {
+//   console.log('[SoftAP]:\tSETUP button pressed.');
+//   eventEmitter.emit("neo", "off");
+//   killCurrentProcess();
+//   waitForCurrentProcess('pre-setup');
+// });
 
 
 /*
@@ -399,11 +419,11 @@ var neo_conf = {
 };
 
 // Initialize neopixels
-neopixels.init(neo_conf.num);
+// neopixels.init(neo_conf.num);
 
 var neopixelBreathe = function() {
   var dt = Date.now() - neo_conf.t0;
-  neopixels.setBrightness( Math.floor( (Math.cos(dt/1000) + 1) * (neo_conf.brightness/5.12) ) );
+  // neopixels.setBrightness( Math.floor( (Math.cos(dt/1000) + 1) * (neo_conf.brightness/5.12) ) );
 };
 
 var neopixelSpin = function() {
@@ -425,7 +445,7 @@ var neopixelSpin = function() {
       var current_brightness = neo_conf.brightness - (p * neo_conf.spin.brightness_delta);
       neo_conf.pixelData[current_p] = scaleColorBrightness(neo_conf.color, current_brightness);
     }
-    neopixels.render(neo_conf.pixelData);
+    // neopixels.render(neo_conf.pixelData);
     neo_conf.t0 = Date.now();
   } /*else {
     // (1)   Compute linear fade coefficients
@@ -463,7 +483,7 @@ var renderColor = function() {
   for(var i = 0; i < neo_conf.num; i++) {
     neo_conf.pixelData[i] = neo_conf.color;
   }
-  neopixels.render(neo_conf.pixelData);
+  // neopixels.render(neo_conf.pixelData);
 };
 
 /*
@@ -482,7 +502,7 @@ eventEmitter.on('neo', function(animation_type, color, options) {
   if (neo_conf.timer) clearInterval( neo_conf.timer );
   if (animation_type === "off") {
     neo_conf.color = 0x000000;
-    neopixels.setBrightness(0);
+    // neopixels.setBrightness(0);
     renderColor();
     return;
   }
@@ -497,19 +517,19 @@ eventEmitter.on('neo', function(animation_type, color, options) {
   var refresh_rate = 100;
   switch (animation_type) {
     case "breathe":
-      neopixels.setBrightness( neo_conf.brightness / 2 );
+      // neopixels.setBrightness( neo_conf.brightness / 2 );
       renderColor();
       neo_conf.t0 = Date.now();
       break;
     case "spin":
       setSpinPeriod( options.period );
       setSpinTrace( options.tracelength );
-      neopixels.setBrightness( neo_conf.brightness );
+      // neopixels.setBrightness( neo_conf.brightness );
       neo_conf.t0 = Date.now();
       refresh_rate = 30;
       break;
     default:
-      neopixels.setBrightness( neo_conf.brightness );
+      // neopixels.setBrightness( neo_conf.brightness );
       break;
   }
 
@@ -541,7 +561,7 @@ fs.access("config/credentials.conf", fs.F_OK, function(err) {
 process.on('SIGINT', function () {
   console.log("[SoftAP]:\tSIGINT received.");
   killCurrentProcess();
-  neopixels.reset();
+  // neopixels.reset();
   server.close();
   console.log("[SoftAP]:\tExiting Node process.");
   process.exit(0);

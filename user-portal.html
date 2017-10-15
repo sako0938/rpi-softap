@@ -1,0 +1,71 @@
+<html>
+<head>
+<title>WiFi Setup </title>
+<style>
+table, th, td {
+    border: 1px solid black;
+}
+</style>
+<script src="/jquery" type="text/javascript"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+	console.log("Ready to go!");
+
+	$.ajax({
+		url: '/scan',
+		success: function(result) {
+			console.log(result);
+			network_list = result
+			// console.log(network_list);
+			$('#network-list').append('<tr><th>SSID</th><th>Security</th><th>Strength</th><tr>');
+			$.each(result,function(data,val) {
+				network_table = '<tr>'
+				network_table += '<th>' + val.ssid + '</th>'
+				if (val.security == true) {
+					network_table += '<th style="background-color:green;">' + val.security + '</th>'
+				}
+				else {
+					network_table += '<th style="background-color:red;">' + val.security + '</th>'
+				}
+				network_table += '<th>' + val.signal + '</th>'
+				network_table += '</tr>'
+				$('#network-list').append(network_table);
+			});
+			// $('#network-list').append('<p>' + result + '</p>');
+		} //end success
+	}); //end ajax
+
+	$('#wifi-submit').click(function() {
+		var ssid = $('#wifi-ssid').val();
+		var pass = $('#wifi-pass').val();
+		console.log("Using Username: " + ssid + " and password: " + pass);
+		var config =  JSON.stringify({'ssid':ssid,'password':pass});
+		// var config = [{'ssid':ssid,'password':pass}]
+		console.log(config);
+		$.ajax({
+		url: '/configure',
+		data: config,
+		type: 'POST',
+		dataType: 'json',
+		success: function(result) {
+			console.log("Data posted");
+			console.log(result);
+		} //end success
+	});
+	}); //end wifi submit click
+}); //end onready
+</script>
+</head>
+<body>
+<h1>Setup WiFi Network</h1>
+<h2>Available Networks: </h2>
+<table id='network-list'>
+</table>
+<h2>Network Setup:</h2>
+<input id='wifi-ssid' type='text' value='SSID'/>
+<input id='wifi-pass' type='text' value='Password'/>
+<input id='wifi-submit' type='button' value='Setup WiFi!'/>
+<br/>
+Leave password empty if unsecured WiFi network.
+</body>
+</html>
