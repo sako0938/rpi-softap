@@ -5,12 +5,12 @@ sudo killall hostapd
 sudo service udhcpd stop
 
 # (2) Kill the WiFi connection daemon
-# sudo systemctl stop wpa-keepalive.service
-# sudo wpa_cli -i wlan0 terminate
+sudo systemctl stop wpa-keepalive.service
+sudo wpa_cli -i wlan0 terminate
 
 # (3) Launch the access point
-#sudo service hostapd stop
-sudo hostapd -B config/hostapd.conf
+sudo service hostapd stop
+sudo hostapd -B /home/pi/rpi-softap/config/hostapd.conf
 
 # (4) Configure an IPV4 subnet DHCP server
 sudo ifconfig wlan0 192.168.42.1

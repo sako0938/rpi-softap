@@ -7,6 +7,18 @@ This software makes it easy to create a Raspberry Pi-based product that can be c
 *  While connected to this network, the RPi will provide a simple REST server at `http://192.168.42.1` that provides end points to GET a list nearby WiFi networks, or to POST an SSID/password combo that the RPi will then remember and automatically connect to.
 *  Also included is logic that will control a neopixel WS121* strip which will automatically indicate the state of the WiFi connection (i.e. not configured, working, connecting, online).
 
+#Work in progress
+This code is in process of restructing, hopefully the interface will soon closer match the operation of the original code. Right now network setup is only available when the device is already online...
+
+Edit cron job to run every minute because @reboot occurs before network connection
+```bash
+sudo crontab -e
+
+Add to file:
+* * * * * /home/pi/rpi-softap/scripts/bootup
+
+```
+
 # Usage
 Command | Action
 ---|---

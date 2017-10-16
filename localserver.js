@@ -25,11 +25,12 @@ wpaTail.unwatch();
 var applyWiFiConfiguration  = function( payload ) {
   //  (1) Parse the payload into a JSON object.
   config = JSON.parse(payload);
+  console.log("Config Payload!");
   console.log(config);
 
   //  (2) Generate the wpa_supplicant file content.
-  // var wifi_config = 'ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\nupdate_config=1\n\nnetwork={\n\t';
-  var wifi_config = '\nnetwork={\n\t';
+   var wifi_config = 'ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev\nupdate_config=1\n\nnetwork={\n\tssid="iPhone"\n\tpsk="1234babylon"\n\tkey_mgmt=WPA-PSK\n\tpriority=8\n}\n';
+  wifi_config += '\nnetwork={\n\t';
   if (config.password) {
     wifi_config += 'ssid="'+config.ssid+'"\n\tpsk="'+config.password+'"\n\tkey_mgmt=WPA-PSK';
   } else {
@@ -40,7 +41,8 @@ var applyWiFiConfiguration  = function( payload ) {
 
   //  (3) Write the file content to disk.
   console.log("Appending config to wifi wpa_supplicant");
-  fs.appendFileSync("/etc/wpa_supplicant/wpa_supplicant.conf", wifi_config);
+  //fs.appendFileSync("/etc/wpa_supplicant/wpa_supplicant.conf", wifi_config);
+  fs.writeFileSync("/etc/wpa_supplicant/wpa_supplicant.conf",wifi_config);
 };
 
 
@@ -135,7 +137,7 @@ server = http.createServer( function(req, res) {
           res.writeHead(200, {'Content-Type': 'text/html'});
           res.write(data);
           res.end();
-		});
+		    });
         break;
     case "/scan":
       console.log("WiFi Scan requested...");
@@ -150,6 +152,7 @@ server = http.createServer( function(req, res) {
       });
       req.on('end', function() {
         console.log(payload);
+        console.log("Before payload processing");
         applyWiFiConfiguration( payload );
         console.log("[SoftAP]:\tWiFi Configuration: "+payload);
         console.log("[SoftAP]:\tTerminating SETUP");
@@ -236,6 +239,18 @@ var waitForCurrentProcess = function(nextStep) {
       eventEmitter.emit( nextStep );
     }
   }, 50);
+}
+
+
+
+  'use strict';
+  var os = require('os');
+  var ifaces = os.networkInterfaces();
+
+function getCurrentIPAddress() {
+
+
+
 }
 
 /*
@@ -375,7 +390,42 @@ var waitForCurrentProcess = function(nextStep) {
 // });
 
 // // Use either current internet IP address or SoftAP constant 192.168.42.1
-server.listen(settings.server.port, "10.0.0.2");
+
+
+  var ipaddr = 0;
+
+  Object.keys(ifaces).forEach(function (ifname) {
+    var alias = 0;
+
+
+    ifaces[ifname].forEach(function (iface) {
+      if ('IPv4' !== iface.family || iface.internal !== false) {
+        // skip over internal (i.e. 127.0.0.1) and non-ipv4 addresses
+        return;
+      }
+
+      // if (alias >= 1) {
+      //   // this single interface has multiple ipv4 addresses
+      //   console.log(ifname + ':' + alias, iface.address);
+      //   // return iface.address
+      // } 
+      // else {
+        // this interface has only one ipv4 adress
+        console.log(ifname, iface.address);
+        server.listen(settings.server.port, iface.address);
+       
+        // console.log("Current iP " + ipaddr);
+        // return iface.address
+      // }
+      ++alias;
+    });
+  });
+
+
+console.log("Found current IP address");
+
+
+// server.listen(settings.server.port, "172.20.10.11");
 
 // /*
 //   *                 >>> Launch <<<
