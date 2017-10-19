@@ -1,0 +1,6 @@
+#!/bin/sh
+#using tutorial: https://frillip.com/using-your-raspberry-pi-3-as-a-wifi-access-point-with-hostapd/
+service dhcpcd restart
+ifdown wlan0; sudo ifup wlan0
+/usr/sbin/hostapd /etc/hostapd/hostapd.conf >> /home/pi/debug.txt
+#service dnsmasq start
